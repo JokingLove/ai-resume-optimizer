@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI简历优化助手 - 结果对比页</title>
+    <style>
+        /* ===== 全局变量 ===== */
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #3182ce;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --danger: #e53e3e;
+            --bg-light: #f7fafc;
+            --bg-white: #ffffff;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            
+            /* 差异高亮颜色 */
+            --diff-removed: #e53e3e;
+            --diff-added: #38a169;
+            --diff-suggest: #d69e2e;
+            
+            /* 模板颜色 */
+            --template-blue: #2563eb;
+            --template-orange: #ea580c;
+            --template-gray: #374151;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        /* ===== 顶部评分区 ===== */
+        .score-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .score-main {
+            text-align: center;
+            min-width: 180px;
+        }
+
+        .score-number {
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .score-label {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+
+        .score-scale {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        .score-right {
+            flex: 1;
+        }
+
+        .match-rate-container {
+            margin-bottom: 20px;
+        }
+
+        .match-rate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .match-rate-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .match-rate-value {
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #68d391;
+        }
+
+        .progress-bar {
+            height: 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #68d391, #48bb78);
+            border-radius: 8px;
+            transition: width 1s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+        }
+
+        .progress-fill::after {
+            content: '▶';
+            color: white;
+            font-size: 10px;
+        }
+
+        /* ===== 技能差距分析 ===== */
+        .skills-section {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .skills-grid { grid-template-columns: 1fr; }
+            .score-header { flex-direction: column; gap: 30px; text-align: center; }
+        }
+
+        .skill-card {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .skill-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .skill-card.matched { border-color: var(--success); }
+        .skill-card.missing { border-color: var(--danger); }
+        .skill-card.suggested { border-color: var(--warning); }
+
+        .skill-card-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .skill-card.matched .skill-card-title { color: var(--success); }
+        .skill-card.missing .skill-card-title { color: var(--danger); }
+        .skill-card.suggested .skill-card-title { color: var(--warning); }
+
+        .skill-icon {
+            font-size: 1.2rem;
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .skill-tag {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .skill-tag.matched {
+            background: rgba(56, 161, 105, 0.15);
+            color: var(--success);
+        }
+
+        .skill-tag.missing {
+            background: rgba(229, 62, 62, 0.15);
+            color: var(--danger);
+        }
+
+        .skill-tag.suggested {
+            background: rgba(214, 158, 46, 0.15);
+            color: var(--warning);
+        }
+
+        /* ===== 左右对比区 ===== */
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .comparison-section { grid-template-columns: 1fr; }
+        }
+
+        .comparison-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .comparison-header {
+            padding: 16px 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .comparison-header.original {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+            color: white;
+        }
+
+        .comparison-header.optimized {
+            background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+            color: white;
+        }
+
+        .comparison-content {
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* ===== 结构化简历区块 ===== */
+        .resume-block {
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .resume-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .resume-contact {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .resume-section {
+            margin-bottom: 20px;
+        }
+
+        .resume-section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+            border-left: 4px solid var(--accent);
+            padding-left: 10px;
+            margin-bottom: 12px;
+        }
+
+        .resume-item {
+            margin-bottom: 12px;
+            padding-left: 16px;
+        }
+
+        .resume-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .resume-item-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .resume-item-date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .resume-item-subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .resume-bullets {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .resume-bullets li {
+            position: relative;
+            padding-left: 18px;
+            margin-bottom: 4px;
+        }
+
+        .resume-bullets li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* ===== 差异高亮 ===== */
+        .diff-removed {
+            background: rgba(229, 62, 62, 0.15);
+            color: var(--diff-removed);
+            text-decoration: line-through;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .diff-added {
+            background: rgba(56, 161, 105, 0.15);
+            color: var(--diff-added);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .diff-suggest {
+            background: rgba(214, 158, 46, 0.15);
+            color: var(--diff-suggest);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        /* ===== 建议列表 ===== */
+        .suggestions-section {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .suggestions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .suggestion-card {
+            background: var(--bg-light);
+            border-radius: 10px;
+            padding: 16px 20px;
+            border-left: 5px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .suggestion-card:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow);
+        }
+
+        .suggestion-card.high { border-left-color: var(--danger); }
+        .suggestion-card.medium { border-left-color: var(--warning); }
+        .suggestion-card.low { border-left-color: var(--accent); }
+
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .suggestion-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .priority-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .priority-badge.high {
+            background: rgba(229, 62, 62, 0.15);
+            color: var(--danger);
+        }
+
+        .priority-badge.medium {
+            background: rgba(214, 158, 46, 0.15);
+            color: var(--warning);
+        }
+
+        .priority-badge.low {
+            background: rgba(49, 130, 206, 0.15);
+            color: var(--accent);
+        }
+
+        .suggestion-content {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ===== 页面切换Tab ===== */
+        .page-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: var(--bg-white);
+            padding: 8px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .page-tab {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .page-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .page-tab:hover:not(.active) {
+            background: var(--bg-light);
+        }
+
+        /* ===== 模板切换预览页 ===== */
+        .template-preview-page { display: none; }
+        .template-preview-page.active { display: block; }
+
+        .template-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .template-tab {
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+            color: white;
+        }
+
+        .template-tab.blue { background: var(--template-blue); }
+        .template-tab.orange { background: var(--template-orange); }
+        .template-tab.gray { background: var(--template-gray); }
+
+        .template-tab.active {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .template-tab:hover:not(.active) {
+            opacity: 0.9;
+        }
+
+        .template-preview-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .template-preview-container { grid-template-columns: 1fr; }
+        }
+
+        .template-preview {
+            background: var(--bg-white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .template-preview-header {
+            padding: 16px 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .template-preview.blue .template-preview-header { background: var(--template-blue); }
+        .template-preview.orange .template-preview-header { background: var(--template-orange); }
+        .template-preview.gray .template-preview-header { background: var(--template-gray); }
+
+        .template-resume {
+            padding: 40px;
+        }
+
+        /* 模板样式 - 蓝色 */
+        .template-resume.blue-template {
+            font-family: 'Georgia', serif;
+        }
+
+        .template-resume.blue-template h1 {
+            color: var(--template-blue);
+            font-size: 28px;
+            border-bottom: 3px solid var(--template-blue);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .template-resume.blue-template .resume-meta {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .template-resume.blue-template h2 {
+            color: var(--template-blue);
+            font-size: 16px;
+            border-left: 4px solid #3b82f6;
+            padding-left: 10px;
+            margin: 20px 0 12px;
+        }
+
+        .template-resume.blue-template .entry-title {
+            font-weight: 600;
+            color: #1e3a5f;
+        }
+
+        .template-resume.blue-template .entry-sub {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* 模板样式 - 橙色 */
+        .template-resume.orange-template {
+            font-family: 'Arial', sans-serif;
+        }
+
+        .template-resume.orange-template h1 {
+            color: var(--template-orange);
+            font-size: 26px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .template-resume.orange-template .resume-meta {
+            text-align: center;
+            color: #78716c;
+            font-size: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px dashed #fed7aa;
+            padding-bottom: 16px;
+        }
+
+        .template-resume.orange-template h2 {
+            color: var(--template-orange);
+            font-size: 15px;
+            background: #fff7ed;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 16px 0 10px;
+        }
+
+        .template-resume.orange-template .entry-title {
+            font-weight: 700;
+            color: #7c2d12;
+        }
+
+        .template-resume.orange-template .entry-sub {
+            color: #a8a29e;
+            font-size: 12px;
+        }
+
+        /* 模板样式 - 灰色 */
+        .template-resume.gray-template {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .template-resume.gray-template h1 {
+            color: var(--template-gray);
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .template-resume.gray-template .resume-meta {
+            color: #9ca3af;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .template-resume.gray-template h2 {
+            color: var(--template-gray);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 6px;
+            margin: 16px 0 12px;
+        }
+
+        .template-resume.gray-template .entry-title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .template-resume.gray-template .entry-sub {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .template-actions {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .action-title {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .export-btn.pdf {
+            background: linear-gradient(135deg, var(--danger) 0%, #c53030 100%);
+            color: white;
+        }
+
+        .export-btn.pdf:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .export-btn.word {
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+            color: white;
+        }
+
+        .export-btn.word:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .export-btn.copy {
+            background: var(--bg-light);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+
+        .export-btn.copy:hover {
+            background: var(--border);
+        }
+
+        /* ===== 导航按钮 ===== */
+        .nav-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 24px;
+        }
+
+        .nav-btn {
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn.back {
+            background: var(--bg-light);
+            color: var(--text-secondary);
+            border: 2px solid var(--border);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        /* ===== 设计说明 ===== */
+        .design-notes {
+            background: #fefce8;
+            border: 2px dashed #fbbf24;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .design-notes h3 {
+            color: #92400e;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .design-notes ul {
+            color: #78350f;
+            padding-left: 20px;
+        }
+
+        .design-notes li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 设计说明（仅用于展示） -->
+        <div class="design-notes">
+            <h3>📋 设计稿说明 - AI简历优化助手结果页 V1</h3>
+            <ul>
+                <li><strong>页面1：结果对比页</strong> - 左右分栏显示原始/优化后简历，结构化渲染，差异高亮</li>
+                <li><strong>页面2：模板切换预览</strong> - 支持蓝色/橙色/灰色三套模板实时预览</li>
+                <li><strong>差异颜色</strong> - 红色(删除)、绿色(新增)、黄色(建议修改)</li>
+                <li><strong>技能分析</strong> - 三列布局：已匹配/缺失/建议添加</li>
+            </ul>
+        </div>
+
+        <!-- 页面切换Tab -->
+        <div class="page-tabs">
+            <button class="page-tab active" onclick="switchPage('comparison')">📊 结果对比</button>
+            <button class="page-tab" onclick="switchPage('template')">🎨 模板预览</button>
+        </div>
+
+        <!-- ===== 页面1：结果对比页 ===== -->
+        <div id="comparison-page" class="comparison-page">
+            <!-- 顶部评分区 -->
+            <div class="score-header">
+                <div class="score-main">
+                    <div class="score-number">72</div>
+                    <div class="score-label">匹配度评分</div>
+                    <div class="score-scale">满分 100 分</div>
+                </div>
+                <div class="score-right">
+                    <div class="match-rate-container">
+                        <div class="match-rate-header">
+                            <span class="match-rate-label">关键词匹配率</span>
+                            <span class="match-rate-value">68%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 68%;"></div>
+                        </div>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.8); font-size: 14px;">
+                        简历与岗位描述的关键词匹配度，影响简历筛选通过率
+                    </p>
+                </div>
+            </div>
+
+            <!-- 技能差距分析 -->
+            <div class="skills-section">
+                <div class="section-title">技能差距分析</div>
+                <div class="skills-grid">
+                    <div class="skill-card matched">
+                        <div class="skill-card-title">
+                            <span class="skill-icon">✓</span>
+                            已匹配技能
+                        </div>
+                        <div class="skill-tags">
+                            <span class="skill-tag matched">Python</span>
+                            <span class="skill-tag matched">MySQL</span>
+                            <span class="skill-tag matched">Git</span>
+                            <span class="skill-tag matched">Docker</span>
+                        </div>
+                    </div>
+                    <div class="skill-card missing">
+                        <div class="skill-card-title">
+                            <span class="skill-icon">✗</span>
+                            缺失技能
+                        </div>
+                        <div class="skill-tags">
+                            <span class="skill-tag missing">Redis</span>
+                            <span class="skill-tag missing">Kubernetes</span>
+                            <span class="skill-tag missing">微服务架构</span>
+                        </div>
+                    </div>
+                    <div class="skill-card suggested">
+                        <div class="skill-card-title">
+                            <span class="skill-icon">💡</span>
+                            建议补充
+                        </div>
+                        <div class="skill-tags">
+                            <span class="skill-tag suggested">Agile/Scrum</span>
+                            <span class="skill-tag suggested">CI/CD</span>
+                            <span class="skill-tag suggested">云服务(AWS)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 左右对比区 -->
+            <div class="comparison-section">
+                <!-- 原始简历 -->
+                <div class="comparison-card">
+                    <div class="comparison-header original">
+                        <span>📄</span> 原始简历
+                    </div>
+                    <div class="comparison-content">
+                        <div class="resume-block">
+                            <div class="resume-name">张明</div>
+                            <div class="resume-contact">
+                                <span>📱 138-0000-1234</span>
+                                <span>✉️ zhangming@email.com</span>
+                                <span>📍 北京市</span>
+                            </div>
+
+                            <div class="resume-section">
+                                <div class="resume-section-title">教育背景</div>
+                                <div class="resume-item">
+                                    <div class="resume-item-header">
+                                        <span class="resume-item-title">北京理工大学</span>
+                                        <span class="resume-item-date">2016-2020</span>
+                                    </div>
+                                    <div class="resume-item-subtitle">计算机科学与技术 · 本科 · GPA 3.5/4.0</div>
+                                </div>
+                            </div>
+
+                            <div class="resume-section">
+                                <div class="resume-section-title">工作经历</div>
+                                <div class="resume-item">
+                                    <div class="resume-item-header">
+                                        <span class="resume-item-title">字节跳动 · 后端开发工程师</span>
+                                        <span class="resume-item-date">2023-至今</span>
+                                    </div>
+                                    <ul class="resume-bullets">
+                                        <li>负责推荐系统后端开发</li>
+                                        <li>优化接口响应时间，提升系统性能</li>
+                                    </ul>
+                                </div>
+                                <div class="resume-item">
+                                    <div class="resume-item-header">
+                                        <span class="resume-item-title">腾讯 · 软件开发工程师</span>
+                                        <span class="resume-item-date">2020-2023</span>
+                                    </div>
+                                    <ul class="resume-bullets">
+                                        <li>参与社交产品后端开发</li>
+                                        <li>完成多个功能模块开发</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="resume-section">
+                                <div class="resume-section-title">项目经验</div>
+                                <div class="resume-item">
+                                    <div class="resume-item-header">
+                                        <span class="resume-item-title">用户行为分析系统</span>
+                                        <span class="resume-item-date">2022</span>
+                                    </div>
+                                    <ul class="resume-bullets">
+                                        <li>使用Python和MySQL开发数据处理模块</li>
+                                        <li>实现实时数据统计功能</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="resume-section">
+                                <div class="resume-section-title">技能证书</div>
+                                <div class="resume-item">
+                                    <span class="diff-removed">熟悉Python、Java开发</span> · <span class="diff-removed">了解MySQL</span> · Docker · Git
+                                </div>
+                                <div class="resume-item">
+                                    <span class="diff-removed">英语CET-6</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 优化后简历 -->
+                <div class="comparison-card">
+                    <div class="comparison-header optimized">
+                        <span>✨</span> 优化后简历
+                    </div>
+                    <div class="comparison-content">
+                        <div class="resume-block">
+                            <div class="resume-name">张明</div>
+                            <div class="resume-contact">
+                                <span>📱 138-0000-1234</span>
+                                <span>✉️ zhangming@email.com</span>
+                                <span>📍 北京市</span>
+                            </div>
+
+                            <div class="resume-section">
+                                <div class="resume-section-title">教育背景</div>
+                                <div class="resume-item">
+                                    <div class="resume-item-header">
+                                        <span class="resume-item-title">北京理工大学</span>
+                                        <span class="resume-item-date">2016-2020</span>
+                                    </div>
+                                    <div class="resume-item-subtitle">计算机科学与技术 · 本科 · GPA 3.8/4.0（专业前10%）</div>
+                                </div>
+                            </div>
+
+                            <div class="resume-section">
+                                <div class="resume-section-title">工作经历</div>
+                                <div class="resume-item">
+                                    <div class="resume-item-header">
+                                        <span class="resume-item-title">字节跳动 · 资深后端开发工程师</span>
+                                        <span class="resume-item-date">2023-至今</span>
+                                    </div>
+                                    <ul class="resume-bullets">
+                                        <li><span class="diff-added">主导</span>推荐系统后端架构设计与开发，<span class="diff-added">QPS提升40%</span></li>
+                                        <li>优化接口响应时间，系统性能<span class="diff-added">提升25%</span></li>
+                                        <li><span class="diff-added">运用Redis缓存优化热数据查询，响应时间降低60%</span></li>
+                                    </ul>
+                                </div>
+                                <div class="resume-item">
+                                    <div class="resume-item-header">
+                                        <span class="resume-item-title">腾讯 · 高级软件开发工程师</span>
+                                        <span class="resume-item-date">2020-2023</span>
+                                    </div>
+                                    <ul class="resume-bullets">
+                                        <li>参与<span class="diff-suggest">千万级</span>社交产品后端开发</li>
+                                        <li>主导<span class="diff-suggest">5</span>个核心功能模块开发，<span class="diff-suggest">上线后服务超500万用户</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="resume-section">
+                                <div class="resume-section-title">项目经验</div>
+                                <div class="resume-item">
+                                    <div class="resume-item-header">
+                                        <span class="resume-item-title">用户行为分析系统</span>
+                                        <span class="resume-item-date">2022</span>
+                                    </div>
+                                    <ul class="resume-bullets">
+                                        <li>使用Python和MySQL<span class="diff-added">（主从同步配置）</span>开发数据处理模块</li>
+                                        <li><span class="diff-added">基于Kafka构建实时数据管道</span>，实现秒级数据统计</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="resume-section">
+                                <div class="resume-section-title">专业技能</div>
+                                <div class="resume-item">
+                                    <span class="diff-added">【后端开发】</span>Python / Java / Go · <span class="diff-added">MySQL（读写分离/索引优化）</span> · Redis · Docker / K8s · <span class="diff-added">微服务架构</span>
+                                </div>
+                                <div class="resume-item">
+                                    <span class="diff-added">【 DevOps 】</span>Git · CI/CD · <span class="diff-added">Kubernetes</span> · <span class="diff-added">AWS</span>
+                                </div>
+                                <div class="resume-item">
+                                    <span class="diff-added">【 Agile 】</span>Scrum · <span class="diff-added">Jira</span> · 英语CET-6
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 修改建议列表 -->
+            <div class="suggestions-section">
+                <div class="section-title">修改建议</div>
+                <div class="suggestions-list">
+                    <div class="suggestion-card high">
+                        <div class="suggestion-header">
+                            <span class="suggestion-title">补充微服务架构经验</span>
+                            <span class="priority-badge high">高优先级</span>
+                        </div>
+                        <div class="suggestion-content">
+                            岗位要求中多次提到微服务架构，建议在项目经验中补充相关实践，如：服务拆分、RPC通信、服务治理等。
+                        </div>
+                    </div>
+                    <div class="suggestion-card high">
+                        <div class="suggestion-header">
+                            <span class="suggestion-title">量化工作成果数据</span>
+                            <span class="priority-badge high">高优先级</span>
+                        </div>
+                        <div class="suggestion-content">
+                            腾讯工作经历中建议补充具体数据，如：服务用户量级、接口QPS、性能提升比例等，更能体现个人价值。
+                        </div>
+                    </div>
+                    <div class="suggestion-card medium">
+                        <div class="suggestion-header">
+                            <span class="suggestion-title">补充Redis/Kubernetes技能</span>
+                            <span class="priority-badge medium">中优先级</span>
+                        </div>
+                        <div class="suggestion-content">
+                            岗位明确要求Redis缓存和K8s容器编排经验，建议在技能列表中补充并注明使用经验。
+                        </div>
+                    </div>
+                    <div class="suggestion-card low">
+                        <div class="suggestion-header">
+                            <span class="suggestion-title">优化技能描述格式</span>
+                            <span class="priority-badge low">低优先级</span>
+                        </div>
+                        <div class="suggestion-content">
+                            建议采用分类格式（如：后端开发/DevOps/工具链）组织技能，更清晰展示技术广度。
+                        </div>
+                    </div>
+                    <div class="suggestion-card low">
+                        <div class="suggestion-header">
+                            <span class="suggestion-title">补充云服务经验</span>
+                            <span class="priority-badge low">低优先级</span>
+                        </div>
+                        <div class="suggestion-content">
+                            岗位提到AWS/GCP优先，建议补充云服务使用经验，如：Lambda、ECS、S3等。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="nav-actions">
+                <button class="nav-btn back" onclick="switchPage('template')">
+                    ← 返回模板预览
+                </button>
+                <button class="nav-btn next" onclick="alert('跳转到优化后简历确认页')">
+                    确认优化结果 →
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== 页面2：模板切换预览 ===== -->
+        <div id="template-page" class="template-preview-page">
+            <!-- 模板选择Tab -->
+            <div class="template-tabs">
+                <button class="template-tab blue active" onclick="switchTemplate('blue')">🔵 专业稳重</button>
+                <button class="template-tab orange" onclick="switchTemplate('orange')">🟠 活力创意</button>
+                <button class="template-tab gray" onclick="switchTemplate('gray')">⚫ 简约商务</button>
+            </div>
+
+            <div class="template-preview-container">
+                <!-- 简历预览 -->
+                <div class="template-preview blue" id="template-preview">
+                    <div class="template-preview-header">简历预览</div>
+                    <div class="template-resume blue-template" id="resume-preview">
+                        <h1>张明</h1>
+                        <div class="resume-meta">
+                            📱 138-0000-1234 · ✉️ zhangming@email.com · 📍 北京市
+                        </div>
+
+                        <h2>教育背景</h2>
+                        <div>
+                            <span class="entry-title">北京理工大学</span> · 计算机科学与技术 · 本科<br>
+                            <span class="entry-sub">2016-2020 · GPA 3.8/4.0（专业前10%）</span>
+                        </div>
+
+                        <h2>工作经历</h2>
+                        <div style="margin-bottom: 16px;">
+                            <span class="entry-title">字节跳动 · 资深后端开发工程师</span><br>
+                            <span class="entry-sub">2023-至今</span>
+                            <ul style="margin: 8px 0; padding-left: 20px;">
+                                <li>主导推荐系统后端架构设计与开发，QPS提升40%</li>
+                                <li>运用Redis缓存优化热数据查询，响应时间降低60%</li>
+                            </ul>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <span class="entry-title">腾讯 · 高级软件开发工程师</span><br>
+                            <span class="entry-sub">2020-2023</span>
+                            <ul style="margin: 8px 0; padding-left: 20px;">
+                                <li>主导5个核心功能模块开发，服务超500万用户</li>
+                            </ul>
+                        </div>
+
+                        <h2>专业技能</h2>
+                        <div>
+                            <strong>后端开发：</strong>Python / Java / Go · MySQL · Redis · Docker / K8s · 微服务架构<br><br>
+                            <strong>DevOps：</strong>Git · CI/CD · Kubernetes · AWS<br><br>
+                            <strong>Agile：</strong>Scrum · Jira · 英语CET-6
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作区 -->
+                <div class="template-actions">
+                    <div class="action-title">导出简历</div>
+                    <button class="export-btn pdf" onclick="alert('正在生成PDF...')">
+                        📄 导出 PDF
+                    </button>
+                    <button class="export-btn word" onclick="alert('正在生成Word...')">
+                        📝 导出 Word
+                    </button>
+                    <button class="export-btn copy" onclick="alert('简历内容已复制到剪贴板')">
+                        📋 复制内容
+                    </button>
+
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+                        <div class="action-title">模板说明</div>
+                        <div id="template-description" style="color: var(--text-secondary); font-size: 14px; line-height: 1.8;">
+                            <p><strong style="color: var(--template-blue);">蓝色模板</strong> - 专业稳重风格，适合技术岗位申请，字体优雅，排版清晰。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="nav-actions">
+                <button class="nav-btn back" onclick="switchPage('comparison')">
+                    ← 返回对比页
+                </button>
+                <button class="nav-btn next" onclick="alert('开始生成PDF...')">
+                    确认并导出 →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面切换
+        function switchPage(page) {
+            document.querySelectorAll('.page-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById('comparison-page').style.display = page === 'comparison' ? 'block' : 'none';
+            document.getElementById('template-page').classList.toggle('active', page === 'template');
+            
+            // 激活对应tab
+            event.target.classList.add('active');
+        }
+
+        // 模板切换
+        function switchTemplate(template) {
+            // 更新Tab样式
+            document.querySelectorAll('.template-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 更新预览容器样式
+            const preview = document.getElementById('template-preview');
+            preview.className = 'template-preview ' + template;
+
+            // 更新简历内容样式
+            const resume = document.getElementById('resume-preview');
+            resume.className = 'template-resume ' + template + '-template';
+
+            // 更新描述
+            const descriptions = {
+                blue: '<p><strong style="color: var(--template-blue);">蓝色模板</strong> - 专业稳重风格，适合技术岗位申请，字体优雅，排版清晰。</p>',
+                orange: '<p><strong style="color: var(--template-orange);">橙色模板</strong> - 活力创意风格，适合互联网/创业公司，视觉冲击力强。</p>',
+                gray: '<p><strong style="color: var(--template-gray);">灰色模板</strong> - 简约商务风格，适合外企/传统行业，低调专业。</p>'
+            };
+            document.getElementById('template-description').innerHTML = descriptions[template];
+        }
+
+        // 模拟数据加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            // 进度条动画
+            setTimeout(() => {
+                document.querySelector('.progress-fill').style.width = '68%';
+            }, 300);
+        });
+    </script>
+</body>
+</html>
