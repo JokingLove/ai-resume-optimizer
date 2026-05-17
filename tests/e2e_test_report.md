@@ -1,116 +1,122 @@
-# AI简历优化产品 — E2E 用户视角测试报告
-> 测试时间：2026-05-17 11:27:10
-> 测试地址：http://127.0.0.1:5002/ui
-> 测试工具：Playwright + Chromium (headless)
+# AI简历优化产品 E2E 测试报告
 
-## 测试结果：✅ GO
+## 测试环境
+- **测试时间**: 2026-05-17 18:36:28
+- **测试目标**: http://127.0.0.1:5002/ui
+- **后端服务**: http://127.0.0.1:5002 (Flask)
+- **测试工具**: Playwright 1.59.0
+- **浏览器**: Chromium (headless)
+- **Python**: 3.11.15
+- **截图目录**: /home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots
 
-| 指标 | 数量 |
-|------|------|
-| 总测试项 | 15 |
-| 通过 | 15 |
-| 失败 | 0 |
-| 通过率 | 100% |
-
----
+## 测试结果汇总
+- **总测试项**: 20
+- **通过**: 16
+- **失败**: 4
+- **通过率**: 80.0%
+- **最终结论**: ❌ NO-GO
 
 ## 详细测试结果
 
-### 1. A1-页面加载 — ✅ PASS
-- 时间: 11:26:34
-- 详情: 标题: AI简历优化助手
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_01_page_loaded.png`
-  ![A1-页面加载](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_01_page_loaded.png)
+### 场景A：正常用户完整流程
 
-### 2. A2-关键元素存在 — ✅ PASS
-- 时间: 11:26:34
-- 详情: 简历框:True JD框:True 按钮:True
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_02_elements_check.png`
-  ![A2-关键元素存在](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_02_elements_check.png)
+| 步骤 | 测试项 | 状态 | 备注 |
+|------|--------|------|------|
+| - | 服务健康检查 | ✅ 通过 | status=ok, service=AI简历优化 |
+| - | A1. 页面标题正确 | ✅ 通过 | title=AI简历优化助手 |
+| - | A2. 简历输入框存在 | ✅ 通过 | visible=True |
+| - | A3. JD输入框存在 | ✅ 通过 | visible=True |
+| - | A4. 分析按钮存在且可点击 | ✅ 通过 | visible=True, enabled=True |
+| - | A5. 简历内容填写成功 | ✅ 通过 | length=134 |
+| - | A6. JD内容填写成功 | ✅ 通过 | length=115 |
+| - | A7. 加载状态出现 | ❌ 失败 | Locator.wait_for: Timeout 3000ms exceeded.
+Call log:
+  - waiting for locator("#loadingOverlay") to be visible
+    11 × locator resolved to hidden <div id="loadingOverlay" class="loading-overlay">…</div>
+ |
+| - | A8. 结果区域出现（超时65秒） | ❌ 失败 | Locator.wait_for: Timeout 65000ms exceeded.
+Call log:
+  - waiting for locator("#resultsSection") to be visible
+    134 × locator resolved to hidden <div id="resultsSection" class="results-section">…</div>
+ |
+| - | A9. 匹配分数显示 | ❌ 失败 | Locator.wait_for: Timeout 3000ms exceeded.
+Call log:
+  - waiting for locator("#scoreNumber") to be visible
+    11 × locator resolved to hidden <div id="scoreNumber" class="score-number">--</div>
+ |
+| - | A10. 技能匹配显示 | ✅ 通过 | has_skills=False, missing_skills=False |
+| - | A11. 修改建议显示 | ✅ 通过 | has_suggestions=False, length=0 |
+| - | B1. 页面刷新正常 | ✅ 通过 | resume=True, jd=True, btn=True |
+| - | B2. 空内容提交有错误提示 | ✅ 通过 | error_visible=False, error_text= |
+| - | B3. 只填简历有错误提示 | ✅ 通过 | error_visible=False, text= |
+| - | C1. 刷新页面3次全部正常 | ✅ 通过 | - |
+| - | C2. 超长文本输入不卡 | ✅ 通过 | elapsed=0.01s, responsive=True |
+| - | C3. 特殊字符有处理 | ✅ 通过 | page_ok=True, input_preserved=True |
+| - | C4. 快速点击不崩溃 | ✅ 通过 | page_stable=True |
+| - | Console Errors Check | ❌ 失败 | 5 errors: ["Identifier 'structuredContainer' has already been declared", "Identifier 'structuredContainer' has already been declared", "Identifier 'structuredContainer' has already been declared"] |
 
-### 3. A3-填写简历 — ✅ PASS
-- 时间: 11:26:34
-- 详情: 已输入简历内容
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_03_filled_resume.png`
-  ![A3-填写简历](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_03_filled_resume.png)
+## 截图记录
 
-### 4. A4-填写JD — ✅ PASS
-- 时间: 11:26:34
-- 详情: 已输入JD内容
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_04_filled_jd.png`
-  ![A4-填写JD](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_04_filled_jd.png)
+| # | 截图文件 |
+|---|----------|
+| - | `e2e_01_page_loaded.png` |
+| - | `e2e_02_elements_check.png` |
+| - | `e2e_02_filled_inputs.png` |
+| - | `e2e_03_filled_resume.png` |
+| - | `e2e_03_loading.png` |
+| - | `e2e_03_result_timeout.png` |
+| - | `e2e_04_filled_jd.png` |
+| - | `e2e_04_page_reloaded.png` |
+| - | `e2e_05_clicked_analyze.png` |
+| - | `e2e_05_empty_submit.png` |
+| - | `e2e_06_loading_state.png` |
+| - | `e2e_06_refresh_3times.png` |
+| - | `e2e_07_result_state.png` |
+| - | `e2e_07_xss_input.png` |
+| - | `e2e_08_rapid_clicks.png` |
+| - | `e2e_08_result_content.png` |
+| - | `e2e_09_reloaded.png` |
+| - | `e2e_10_empty_submit.png` |
+| - | `e2e_11_only_resume.png` |
+| - | `e2e_12_multi_reload.png` |
+| - | `e2e_13_long_text.png` |
+| - | `e2e_14_xss_input.png` |
+| - | `e2e_15_rapid_click.png` |
 
-### 5. A5-点击分析按钮 — ✅ PASS
-- 时间: 11:26:34
-- 详情: 已点击
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_05_clicked_analyze.png`
-  ![A5-点击分析按钮](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_05_clicked_analyze.png)
+## 发现的问题
 
-### 6. A6-加载状态 — ✅ PASS
-- 时间: 11:26:36
-- 详情: 检测到加载提示: True
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_06_loading_state.png`
-  ![A6-加载状态](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_06_loading_state.png)
+### ❌ A7. 加载状态出现
+- **备注**: Locator.wait_for: Timeout 3000ms exceeded.
+Call log:
+  - waiting for locator("#loadingOverlay") to be visible
+    11 × locator resolved to hidden <div id="loadingOverlay" class="loading-overlay">…</div>
 
-### 7. A7-结果返回 — ✅ PASS
-- 时间: 11:26:53
-- 详情: 结果区域已显示
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_07_result_state.png`
-  ![A7-结果返回](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_07_result_state.png)
+- **建议**: 请检查相关功能实现
 
-### 8. A8-结果内容完整 — ✅ PASS
-- 时间: 11:26:53
-- 详情: {'分数/评分': True, '技能匹配': True, '建议': True}
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_08_result_content.png`
-  ![A8-结果内容完整](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_08_result_content.png)
+### ❌ A8. 结果区域出现（超时65秒）
+- **备注**: Locator.wait_for: Timeout 65000ms exceeded.
+Call log:
+  - waiting for locator("#resultsSection") to be visible
+    134 × locator resolved to hidden <div id="resultsSection" class="results-section">…</div>
 
-### 9. B1-页面刷新 — ✅ PASS
-- 时间: 11:26:53
-- 详情: 页面正常刷新
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_09_reloaded.png`
-  ![B1-页面刷新](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_09_reloaded.png)
+- **建议**: 请检查相关功能实现
 
-### 10. B2-空内容提交 — ✅ PASS
-- 时间: 11:26:55
-- 详情: 显示错误提示
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_10_empty_submit.png`
-  ![B2-空内容提交](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_10_empty_submit.png)
+### ❌ A9. 匹配分数显示
+- **备注**: Locator.wait_for: Timeout 3000ms exceeded.
+Call log:
+  - waiting for locator("#scoreNumber") to be visible
+    11 × locator resolved to hidden <div id="scoreNumber" class="score-number">--</div>
 
-### 11. B3-只填简历 — ✅ PASS
-- 时间: 11:26:58
-- 详情: 显示JD缺失提示
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_11_only_resume.png`
-  ![B3-只填简历](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_11_only_resume.png)
+- **建议**: 请检查相关功能实现
 
-### 12. C1-多次刷新 — ✅ PASS
-- 时间: 11:27:01
-- 详情: 3次刷新均正常
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_12_multi_reload.png`
-  ![C1-多次刷新](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_12_multi_reload.png)
+### ❌ Console Errors Check
+- **备注**: 5 errors: ["Identifier 'structuredContainer' has already been declared", "Identifier 'structuredContainer' has already been declared", "Identifier 'structuredContainer' has already been declared"]
+- **建议**: 请检查相关功能实现
 
-### 13. C2-超长文本输入 — ✅ PASS
-- 时间: 11:27:01
-- 详情: 5000字符输入未崩溃
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_13_long_text.png`
-  ![C2-超长文本输入](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_13_long_text.png)
-
-### 14. C3-XSS特殊字符 — ✅ PASS
-- 时间: 11:27:04
-- 详情: XSS被过滤/转义
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_14_xss_input.png`
-  ![C3-XSS特殊字符](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_14_xss_input.png)
-
-### 15. C4-快速连续点击 — ✅ PASS
-- 时间: 11:27:10
-- 详情: 未崩溃，防重复提交
-- 截图: `/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_15_rapid_click.png`
-  ![C4-快速连续点击](/home/joking/Dev/hermes/ai_resume_optimizer/tests/screenshots/e2e_15_rapid_click.png)
-
----
 
 ## 最终结论
 
-**✅ GO**
+**❌ NO-GO**
 
-- 通过: 15/15
-- 失败: 0/15
+通过率 80.0%，4 项测试失败，产品存在较多问题，建议修复后再测试。
+
